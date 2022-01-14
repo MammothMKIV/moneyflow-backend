@@ -1,5 +1,7 @@
 package io.moneyflow.server.entity
 
+import io.moneyflow.server.mapper.Default
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.persistence.Column
@@ -14,13 +16,13 @@ import javax.persistence.Table
 
 @Entity
 @Table(name = "transactions")
-class Transaction(
+class Transaction @Default constructor(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    val id: Long,
+    val id: Long?,
 
     @Column(name = "date")
-    val date: LocalDate,
+    val date: LocalDate?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_from")
@@ -31,7 +33,7 @@ class Transaction(
     val accountTo: Account?,
 
     @Column(name = "amount")
-    val amount: Long,
+    val amount: BigDecimal?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category")
@@ -63,4 +65,19 @@ class Transaction(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "deleted_by")
     val deletedBy: User?,
-)
+) {
+    constructor(date: LocalDate, amount: BigDecimal) : this(
+        null, date,
+        null,
+        null, amount,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+    )
+}
