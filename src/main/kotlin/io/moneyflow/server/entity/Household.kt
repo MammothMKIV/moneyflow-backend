@@ -16,11 +16,11 @@ import javax.persistence.Table
 class Household(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    val id: Long,
+    val id: Long?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner")
-    val owner: User,
+    val owner: User?,
 
     @Column(name = "name")
     val name: String,
