@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.BeanPropertyBindingResult
 import org.springframework.validation.SmartValidator
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -54,7 +55,7 @@ class TransactionController(
     }
 
     @PatchMapping(path = ["{id}"], consumes = ["application/merge-patch+json"])
-    fun getList(@PathVariable id: Long, @RequestBody patch: JsonNode): ResponseEntity<Any> {
+    fun update(@PathVariable id: Long, @RequestBody patch: JsonNode): ResponseEntity<Any> {
         val transaction = transactionService.get(id)
 
         if (patch.has("id")) {
@@ -78,6 +79,19 @@ class TransactionController(
         }
 
         transactionService.save(patchedTransaction)
+
+        return ResponseEntity(HttpStatus.NO_CONTENT)
+    }
+
+    @DeleteMapping(path = ["{id}"])
+    fun delete(@PathVariable id: Long): ResponseEntity<Any> {
+        val transaction = transactionService.get(id)
+
+        if (transaction == null) {
+            return ResponseEntity(HttpStatus.NOT_FOUND)
+        }
+
+        transactionService.delete(transaction.id!!)
 
         return ResponseEntity(HttpStatus.NO_CONTENT)
     }

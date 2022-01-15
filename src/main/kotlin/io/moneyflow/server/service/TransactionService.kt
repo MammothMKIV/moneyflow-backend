@@ -22,4 +22,8 @@ class TransactionService(
     fun get(id: Long): Transaction? {
         return transactionRepository.findById(id).orElse(null)
     }
+
+    fun delete(id: Long) {
+        transactionRepository.deleteById(id)
+    }
 }
