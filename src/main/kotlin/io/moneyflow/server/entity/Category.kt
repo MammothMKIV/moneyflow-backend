@@ -1,6 +1,11 @@
 package io.moneyflow.server.entity
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo
+import com.fasterxml.jackson.annotation.JsonIdentityReference
+import com.fasterxml.jackson.annotation.ObjectIdGenerators
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import io.moneyflow.server.mapper.Default
+import io.moneyflow.server.serialization.EntityIdResolver
 import java.time.LocalDateTime
 import javax.persistence.Column
 import javax.persistence.Entity
@@ -33,6 +38,13 @@ class Category @Default constructor(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "household")
+    @JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator::class,
+        property = "id",
+        resolver = EntityIdResolver::class,
+        scope = Household::class
+    )
+    @JsonIdentityReference(alwaysAsId = true)
     val household: Household,
 
     @Column(name = "created_at")

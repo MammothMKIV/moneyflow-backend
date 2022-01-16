@@ -1,6 +1,10 @@
 package io.moneyflow.server.entity
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo
+import com.fasterxml.jackson.annotation.JsonIdentityReference
+import com.fasterxml.jackson.annotation.ObjectIdGenerators
 import io.moneyflow.server.mapper.Default
+import io.moneyflow.server.serialization.EntityIdResolver
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -26,10 +30,24 @@ class Transaction @Default constructor(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_from")
+    @JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator::class,
+        property = "id",
+        resolver = EntityIdResolver::class,
+        scope = Account::class
+    )
+    @JsonIdentityReference(alwaysAsId = true)
     val accountFrom: Account?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_to")
+    @JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator::class,
+        property = "id",
+        resolver = EntityIdResolver::class,
+        scope = Account::class
+    )
+    @JsonIdentityReference(alwaysAsId = true)
     val accountTo: Account?,
 
     @Column(name = "amount")
@@ -37,6 +55,13 @@ class Transaction @Default constructor(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category")
+    @JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator::class,
+        property = "id",
+        resolver = EntityIdResolver::class,
+        scope = Category::class
+    )
+    @JsonIdentityReference(alwaysAsId = true)
     val category: Category?,
 
     @Column(name = "target_participant")
