@@ -1,7 +1,7 @@
 package io.moneyflow.server.entity
 
+import io.moneyflow.server.mapper.Default
 import java.time.LocalDateTime
-import javax.management.monitor.StringMonitor
 import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.FetchType
@@ -14,10 +14,10 @@ import javax.persistence.Table
 
 @Entity
 @Table(name = "categories")
-class Category(
+class Category @Default constructor(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    val id: Long,
+    val id: Long?,
 
     @Column(name = "name")
     val name: String,
@@ -27,6 +27,13 @@ class Category(
 
     @Column(name = "color")
     val color: String,
+
+    @Column(name = "type")
+    val type: CategoryType,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "household")
+    val household: Household,
 
     @Column(name = "created_at")
     val createdAt: LocalDateTime?,

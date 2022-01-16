@@ -67,9 +67,11 @@ class Transaction @Default constructor(
     val deletedBy: User?,
 ) {
     constructor(date: LocalDate, amount: BigDecimal) : this(
-        null, date,
         null,
-        null, amount,
+        date,
+        null,
+        null,
+        amount,
         null,
         null,
         null,
