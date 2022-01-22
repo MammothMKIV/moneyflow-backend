@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch
 import io.moneyflow.server.dto.TransactionDTO
-import io.moneyflow.server.entity.Transaction
 import io.moneyflow.server.mapper.TransactionMapper
 import io.moneyflow.server.response.ListApiResponse
 import io.moneyflow.server.service.TransactionService
@@ -56,7 +55,7 @@ class TransactionController(
 
     @PatchMapping(path = ["{id}"], consumes = ["application/merge-patch+json"])
     fun update(@PathVariable id: Long, @RequestBody patch: JsonNode): ResponseEntity<Any> {
-        val transaction = transactionService.get(id)
+        var transaction = transactionService.get(id)
 
         if (patch.has("id")) {
             (patch as ObjectNode).remove("id")
@@ -66,19 +65,22 @@ class TransactionController(
             return ResponseEntity(HttpStatus.NOT_FOUND)
         }
 
-        val original: JsonNode = objectMapper.valueToTree(transaction)
+        val transactionDTO = transactionMapper.map(transaction)
+        val original: JsonNode = objectMapper.valueToTree(transactionDTO)
         val patched: JsonNode = JsonMergePatch.fromJson(patch).apply(original)
-        val patchedTransaction: Transaction = objectMapper.treeToValue(patched, Transaction::class.java) ?: throw RuntimeException("Couldn't convert Transaction JSON back to Transaction")
+        val patchedTransactionDTO: TransactionDTO = objectMapper.treeToValue(patched, TransactionDTO::class.java) ?: throw RuntimeException("Couldn't convert Transaction JSON back to Transaction")
 
-        val validationErrors = BeanPropertyBindingResult(patchedTransaction, "transaction")
+        val validationErrors = BeanPropertyBindingResult(patchedTransactionDTO, "transaction")
 
-        validator.validate(patchedTransaction, validationErrors)
+        validator.validate(patchedTransactionDTO, validationErrors)
 
         if (validationErrors.hasErrors()) {
             return ResponseEntity(HttpStatus.BAD_REQUEST)
         }
 
-        transactionService.save(patchedTransaction)
+        transaction = transactionMapper.merge(patchedTransactionDTO, transaction)
+
+        transactionService.save(transaction)
 
         return ResponseEntity(HttpStatus.NO_CONTENT)
     }

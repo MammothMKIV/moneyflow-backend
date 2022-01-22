@@ -19,24 +19,24 @@ class OperationConfirmation(
     val id: Long,
 
     @Column(name = "type")
-    val type: OperationConfirmationType,
+    var type: OperationConfirmationType,
 
     @Column(name = "nonce")
-    val nonce: String,
+    var nonce: String,
 
     @Column(name = "expiring_at")
-    val expiringAt: LocalDateTime,
+    var expiringAt: LocalDateTime,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user")
-    val user: User?,
+    var user: User?,
 
     @Column(name = "target_id")
-    val targetId: String?,
+    var targetId: String?,
 
     @Column(name = "created_at")
-    val createdAt: LocalDateTime,
+    var createdAt: LocalDateTime,
 
     @Column(name = "additional_data")
-    val additionalData: String?,
+    var additionalData: String?,
 )

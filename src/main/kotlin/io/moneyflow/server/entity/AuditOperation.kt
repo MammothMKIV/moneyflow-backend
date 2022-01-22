@@ -19,21 +19,21 @@ class AuditOperation(
     val id: Long,
 
     @Column(name = "performed_at")
-    val performedAt: LocalDateTime,
+    var performedAt: LocalDateTime,
 
     @Column(name = "target_id")
-    val targetId: String,
+    var targetId: String,
 
     @Column(name = "type")
-    val type: AuditOperationType,
+    var type: AuditOperationType,
 
     @Column(name = "payload")
-    val payload: String,
+    var payload: String,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user")
-    val user: User,
+    var user: User,
 
     @Column(name = "target_type")
-    val targetType: AuditOperationTargetType,
+    var targetType: AuditOperationTargetType,
 )

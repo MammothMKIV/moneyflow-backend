@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch
 import io.moneyflow.server.dto.AccountDTO
-import io.moneyflow.server.entity.Account
 import io.moneyflow.server.mapper.AccountMapper
 import io.moneyflow.server.response.ListApiResponse
 import io.moneyflow.server.service.AccountService
@@ -56,7 +55,7 @@ class AccountController(
 
     @PatchMapping(path = ["{id}"], consumes = ["application/merge-patch+json"])
     fun update(@PathVariable id: Long, @RequestBody patch: JsonNode): ResponseEntity<Any> {
-        val account = accountService.get(id)
+        var account = accountService.get(id)
 
         if (patch.has("id")) {
             (patch as ObjectNode).remove("id")
@@ -66,19 +65,22 @@ class AccountController(
             return ResponseEntity(HttpStatus.NOT_FOUND)
         }
 
-        val original: JsonNode = objectMapper.valueToTree(account)
+        val accountDTO = accountMapper.map(account)
+        val original: JsonNode = objectMapper.valueToTree(accountDTO)
         val patched: JsonNode = JsonMergePatch.fromJson(patch).apply(original)
-        val patchedAccount: Account = objectMapper.treeToValue(patched, Account::class.java) ?: throw RuntimeException("Couldn't convert Account JSON back to Account")
+        val patchedAccountDTO: AccountDTO = objectMapper.treeToValue(patched, AccountDTO::class.java) ?: throw RuntimeException("Couldn't convert AccountDTO JSON back to AccountDTO")
 
-        val validationErrors = BeanPropertyBindingResult(patchedAccount, "account")
+        val validationErrors = BeanPropertyBindingResult(patchedAccountDTO, "account")
 
-        validator.validate(patchedAccount, validationErrors)
+        validator.validate(patchedAccountDTO, validationErrors)
 
         if (validationErrors.hasErrors()) {
             return ResponseEntity(HttpStatus.BAD_REQUEST)
         }
 
-        accountService.save(patchedAccount)
+        account = accountMapper.merge(patchedAccountDTO, account)
+
+        accountService.save(account)
 
         return ResponseEntity(HttpStatus.NO_CONTENT)
     }

@@ -3,6 +3,7 @@ package io.moneyflow.server.mapper
 import io.moneyflow.server.dto.AccountDTO
 import io.moneyflow.server.entity.Account
 import org.mapstruct.Mapper
+import org.mapstruct.MappingTarget
 
 @Mapper(
     componentModel = "spring",
@@ -16,4 +17,6 @@ interface AccountMapper {
     fun map(account: Account): AccountDTO
 
     fun map(accountDTO: AccountDTO): Account
+
+    fun merge(accountDTO: AccountDTO, @MappingTarget account: Account): Account
 }

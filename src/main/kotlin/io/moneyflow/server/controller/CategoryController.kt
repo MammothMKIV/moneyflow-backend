@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch
 import io.moneyflow.server.dto.CategoryDTO
-import io.moneyflow.server.entity.Category
 import io.moneyflow.server.mapper.CategoryMapper
 import io.moneyflow.server.response.ListApiResponse
 import io.moneyflow.server.service.CategoryService
@@ -56,7 +55,7 @@ class CategoryController(
 
     @PatchMapping(path = ["{id}"], consumes = ["application/merge-patch+json"])
     fun update(@PathVariable id: Long, @RequestBody patch: JsonNode): ResponseEntity<Any> {
-        val category = categoryService.get(id)
+        var category = categoryService.get(id)
 
         if (patch.has("id")) {
             (patch as ObjectNode).remove("id")
@@ -66,19 +65,22 @@ class CategoryController(
             return ResponseEntity(HttpStatus.NOT_FOUND)
         }
 
-        val original: JsonNode = objectMapper.valueToTree(category)
+        val categoryDTO = categoryMapper.map(category)
+        val original: JsonNode = objectMapper.valueToTree(categoryDTO)
         val patched: JsonNode = JsonMergePatch.fromJson(patch).apply(original)
-        val patchedCategory: Category = objectMapper.treeToValue(patched, Category::class.java) ?: throw RuntimeException("Couldn't convert Category JSON back to Category")
+        val patchedCategoryDTO: CategoryDTO = objectMapper.treeToValue(patched, CategoryDTO::class.java) ?: throw RuntimeException("Couldn't convert CategoryDTO JSON back to CategoryDTO")
 
-        val validationErrors = BeanPropertyBindingResult(patchedCategory, "category")
+        val validationErrors = BeanPropertyBindingResult(patchedCategoryDTO, "category")
 
-        validator.validate(patchedCategory, validationErrors)
+        validator.validate(patchedCategoryDTO, validationErrors)
 
         if (validationErrors.hasErrors()) {
             return ResponseEntity(HttpStatus.BAD_REQUEST)
         }
 
-        categoryService.save(patchedCategory)
+        category = categoryMapper.merge(patchedCategoryDTO, category)
+
+        categoryService.save(category)
 
         return ResponseEntity(HttpStatus.NO_CONTENT)
     }

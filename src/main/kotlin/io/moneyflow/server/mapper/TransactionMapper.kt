@@ -5,6 +5,7 @@ import io.moneyflow.server.entity.Transaction
 import io.moneyflow.server.entity.Account
 import io.moneyflow.server.entity.Category
 import org.mapstruct.Mapper
+import org.mapstruct.MappingTarget
 
 @Mapper(
     componentModel = "spring",
@@ -17,6 +18,8 @@ interface TransactionMapper {
     fun map(transaction: Transaction): TransactionDTO
 
     fun map(transactionDTO: TransactionDTO): Transaction
+
+    fun merge(transactionDTO: TransactionDTO, @MappingTarget transaction: Transaction): Transaction
 
     fun accountId(account: Account?): Long? {
         return account?.id

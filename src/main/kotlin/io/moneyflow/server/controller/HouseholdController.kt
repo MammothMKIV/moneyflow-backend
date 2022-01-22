@@ -5,14 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch
 import io.moneyflow.server.dto.HouseholdDTO
-import io.moneyflow.server.dto.TransactionDTO
-import io.moneyflow.server.entity.Household
-import io.moneyflow.server.entity.Transaction
 import io.moneyflow.server.mapper.HouseholdMapper
-import io.moneyflow.server.mapper.TransactionMapper
 import io.moneyflow.server.response.ListApiResponse
 import io.moneyflow.server.service.HouseholdService
-import io.moneyflow.server.service.TransactionService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.BeanPropertyBindingResult
@@ -60,7 +55,7 @@ class HouseholdController(
 
     @PatchMapping(path = ["{id}"], consumes = ["application/merge-patch+json"])
     fun update(@PathVariable id: Long, @RequestBody patch: JsonNode): ResponseEntity<Any> {
-        val household = householdService.get(id)
+        var household = householdService.get(id)
 
         if (patch.has("id")) {
             (patch as ObjectNode).remove("id")
@@ -70,19 +65,22 @@ class HouseholdController(
             return ResponseEntity(HttpStatus.NOT_FOUND)
         }
 
-        val original: JsonNode = objectMapper.valueToTree(household)
+        val householdDTO = householdMapper.map(household)
+        val original: JsonNode = objectMapper.valueToTree(householdDTO)
         val patched: JsonNode = JsonMergePatch.fromJson(patch).apply(original)
-        val patchedHousehold: Household = objectMapper.treeToValue(patched, Household::class.java) ?: throw RuntimeException("Couldn't convert Transaction JSON back to Transaction")
+        val patchedHouseholdDTO: HouseholdDTO = objectMapper.treeToValue(patched, HouseholdDTO::class.java) ?: throw RuntimeException("Couldn't convert HouseholdDTO JSON back to HouseholdDTO")
 
-        val validationErrors = BeanPropertyBindingResult(patchedHousehold, "household")
+        val validationErrors = BeanPropertyBindingResult(patchedHouseholdDTO, "household")
 
-        validator.validate(patchedHousehold, validationErrors)
+        validator.validate(patchedHouseholdDTO, validationErrors)
 
         if (validationErrors.hasErrors()) {
             return ResponseEntity(HttpStatus.BAD_REQUEST)
         }
 
-        householdService.save(patchedHousehold)
+        household = householdMapper.merge(patchedHouseholdDTO, household)
+
+        householdService.save(household)
 
         return ResponseEntity(HttpStatus.NO_CONTENT)
     }

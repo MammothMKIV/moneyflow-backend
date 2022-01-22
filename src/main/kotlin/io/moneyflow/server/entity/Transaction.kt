@@ -1,10 +1,6 @@
 package io.moneyflow.server.entity
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo
-import com.fasterxml.jackson.annotation.JsonIdentityReference
-import com.fasterxml.jackson.annotation.ObjectIdGenerators
 import io.moneyflow.server.mapper.Default
-import io.moneyflow.server.serialization.EntityIdResolver
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -26,70 +22,49 @@ class Transaction @Default constructor(
     val id: Long?,
 
     @Column(name = "date")
-    val date: LocalDate?,
+    var date: LocalDate?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_from")
-    @JsonIdentityInfo(
-        generator = ObjectIdGenerators.PropertyGenerator::class,
-        property = "id",
-        resolver = EntityIdResolver::class,
-        scope = Account::class
-    )
-    @JsonIdentityReference(alwaysAsId = true)
-    val accountFrom: Account?,
+    var accountFrom: Account?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_to")
-    @JsonIdentityInfo(
-        generator = ObjectIdGenerators.PropertyGenerator::class,
-        property = "id",
-        resolver = EntityIdResolver::class,
-        scope = Account::class
-    )
-    @JsonIdentityReference(alwaysAsId = true)
-    val accountTo: Account?,
+    var accountTo: Account?,
 
     @Column(name = "amount")
-    val amount: BigDecimal?,
+    var amount: BigDecimal?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category")
-    @JsonIdentityInfo(
-        generator = ObjectIdGenerators.PropertyGenerator::class,
-        property = "id",
-        resolver = EntityIdResolver::class,
-        scope = Category::class
-    )
-    @JsonIdentityReference(alwaysAsId = true)
-    val category: Category?,
+    var category: Category?,
 
     @Column(name = "target_participant")
-    val targetParticipant: String?,
+    var targetParticipant: String?,
 
     @Column(name = "notes")
-    val notes: String?,
+    var notes: String?,
 
     @Column(name = "created_at")
-    val createdAt: LocalDateTime?,
+    var createdAt: LocalDateTime?,
 
     @Column(name = "updated_at")
-    val updatedAt: LocalDateTime?,
+    var updatedAt: LocalDateTime?,
 
     @Column(name = "deleted_at")
-    val deletedAt: LocalDateTime?,
+    var deletedAt: LocalDateTime?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
-    val createdBy: User?,
+    var createdBy: User?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "updated_by")
-    val updatedBy: User?,
+    var updatedBy: User?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "deleted_by")
-    val deletedBy: User?,
+    var deletedBy: User?,
 ) {
     constructor(date: LocalDate, amount: BigDecimal) : this(
         null,

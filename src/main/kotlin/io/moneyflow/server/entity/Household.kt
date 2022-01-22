@@ -20,29 +20,29 @@ class Household(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner")
-    val owner: User?,
+    var owner: User?,
 
     @Column(name = "name")
-    val name: String,
+    var name: String,
 
     @Column(name = "created_at")
-    val createdAt: LocalDateTime?,
+    var createdAt: LocalDateTime?,
 
     @Column(name = "updated_at")
-    val updatedAt: LocalDateTime?,
+    var updatedAt: LocalDateTime?,
 
     @Column(name = "deleted_at")
-    val deletedAt: LocalDateTime?,
+    var deletedAt: LocalDateTime?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
-    val createdBy: User?,
+    var createdBy: User?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "updated_by")
-    val updatedBy: User?,
+    var updatedBy: User?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "deleted_by")
-    val deletedBy: User?,
+    var deletedBy: User?,
 )

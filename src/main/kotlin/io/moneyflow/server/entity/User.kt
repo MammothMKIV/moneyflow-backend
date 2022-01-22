@@ -19,35 +19,35 @@ class User(
     val id: Long,
 
     @Column(name = "first_name")
-    val firstName: String,
+    var firstName: String,
 
     @Column(name = "last_name")
-    val lastName: String,
+    var lastName: String,
 
     @Column(name = "email")
-    val email: String,
+    var email: String,
 
     @Column(name = "password")
-    val password: String,
+    var password: String,
 
     @Column(name = "created_at")
-    val createdAt: LocalDateTime?,
+    var createdAt: LocalDateTime?,
 
     @Column(name = "updated_at")
-    val updatedAt: LocalDateTime?,
+    var updatedAt: LocalDateTime?,
 
     @Column(name = "deleted_at")
-    val deletedAt: LocalDateTime?,
+    var deletedAt: LocalDateTime?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
-    val createdBy: User?,
+    var createdBy: User?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "updated_by")
-    val updatedBy: User?,
+    var updatedBy: User?,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "deleted_by")
-    val deletedBy: User?,
+    var deletedBy: User?,
 )
