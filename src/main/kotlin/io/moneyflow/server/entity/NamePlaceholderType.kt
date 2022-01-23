@@ -1,6 +1,7 @@
 package io.moneyflow.server.entity
 
-enum class FillerEntityType {
+enum class NamePlaceholderType {
     PAYEE,
     PAYER,
+    NOTE
 }

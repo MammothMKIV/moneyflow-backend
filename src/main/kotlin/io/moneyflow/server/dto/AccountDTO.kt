@@ -1,5 +1,6 @@
 package io.moneyflow.server.dto
-import com.sun.istack.NotNull
+
+import javax.validation.constraints.NotNull
 import io.moneyflow.server.entity.AccountType
 import java.math.BigDecimal
 import javax.validation.constraints.Null

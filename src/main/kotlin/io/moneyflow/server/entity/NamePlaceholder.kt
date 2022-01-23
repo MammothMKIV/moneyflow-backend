@@ -12,8 +12,8 @@ import javax.persistence.ManyToOne
 import javax.persistence.Table
 
 @Entity
-@Table(name = "filler_entities")
-class FillerEntity(
+@Table(name = "name_placeholders")
+class NamePlaceholder(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     val id: Long,
@@ -22,7 +22,11 @@ class FillerEntity(
     var name: String,
 
     @Column(name = "type")
-    var type: FillerEntityType,
+    var type: NamePlaceholderType,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "household")
+    var household: Household,
 
     @Column(name = "created_at")
     var createdAt: LocalDateTime?,
