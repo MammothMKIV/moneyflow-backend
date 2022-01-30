@@ -7,6 +7,7 @@ import com.github.fge.jsonpatch.mergepatch.JsonMergePatch
 import io.moneyflow.server.dto.UserProfileDTO
 import io.moneyflow.server.entity.User
 import io.moneyflow.server.http.request.UserLoginRequest
+import io.moneyflow.server.http.request.UserPasswordUpdateRequest
 import io.moneyflow.server.http.request.UserRegistrationRequest
 import io.moneyflow.server.http.response.UserLoginResponse
 import io.moneyflow.server.mapper.UserMapper
@@ -19,6 +20,7 @@ import io.moneyflow.server.util.JwtTokenUtil
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationManager
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.AuthenticationException
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -115,8 +117,14 @@ class UserController(
     }
 
     @PostMapping("/password")
-    fun changePassword() {
-        TODO("Implement change password")
+    fun changePassword(@RequestBody userPasswordUpdateRequest: UserPasswordUpdateRequest, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
+        try {
+            userService.updatePassword(user, userPasswordUpdateRequest.oldPassword, userPasswordUpdateRequest.newPassword)
+        } catch (e: BadCredentialsException) {
+            return ResponseEntity(ErrorApiResponse("INVALID_CREDENTIALS", e.message), HttpStatus.BAD_REQUEST)
+        }
+
+        return ResponseEntity(HttpStatus.NO_CONTENT)
     }
 
     @PostMapping("/password-reset/request")
