@@ -1,5 +1,10 @@
 package io.moneyflow.server.controller
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.github.fge.jsonpatch.mergepatch.JsonMergePatch
+import io.moneyflow.server.dto.UserProfileDTO
 import io.moneyflow.server.entity.User
 import io.moneyflow.server.http.request.UserLoginRequest
 import io.moneyflow.server.http.request.UserRegistrationRequest
@@ -18,6 +23,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.AuthenticationException
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
+import org.springframework.validation.BeanPropertyBindingResult
+import org.springframework.validation.SmartValidator
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -32,7 +39,9 @@ class UserController(
     val authenticationManager: AuthenticationManager,
     val userMapper: UserMapper,
     val userService: UserService,
-    val jwtTokenUtil: JwtTokenUtil
+    val jwtTokenUtil: JwtTokenUtil,
+    val objectMapper: ObjectMapper,
+    val validator: SmartValidator
 ) {
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -75,9 +84,34 @@ class UserController(
         return ResponseEntity(SuccessApiResponse(userMapper.map(user)), HttpStatus.OK)
     }
 
-    @PatchMapping("/profile")
-    fun updateProfile() {
-        TODO("Implement update profile")
+    @PatchMapping("/profile", consumes = ["application/merge-patch+json"])
+    fun updateProfile(@RequestBody patch: JsonNode, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
+        if (patch.has("id")) {
+            (patch as ObjectNode).remove("id")
+        }
+
+        if (patch.has("createdAt")) {
+            (patch as ObjectNode).remove("createdAt")
+        }
+
+        val userProfileDTO = userMapper.map(user)
+        val original: JsonNode = objectMapper.valueToTree(userProfileDTO)
+        val patched: JsonNode = JsonMergePatch.fromJson(patch).apply(original)
+        val patchedUserProfileDTO: UserProfileDTO = objectMapper.treeToValue(patched, UserProfileDTO::class.java) ?: throw RuntimeException("Couldn't convert UserProfileDTO JSON back to UserProfileDTO")
+
+        val validationErrors = BeanPropertyBindingResult(patchedUserProfileDTO, "userProfile")
+
+        validator.validate(patchedUserProfileDTO, validationErrors)
+
+        if (validationErrors.hasErrors()) {
+            return ResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+
+        val updatedUser = userMapper.merge(patchedUserProfileDTO, user)
+
+        userService.save(updatedUser)
+
+        return ResponseEntity(HttpStatus.NO_CONTENT)
     }
 
     @PostMapping("/password")

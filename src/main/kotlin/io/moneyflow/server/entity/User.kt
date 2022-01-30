@@ -21,10 +21,10 @@ class User(
     val id: Long,
 
     @Column(name = "first_name")
-    var firstName: String,
+    var firstName: String?,
 
     @Column(name = "last_name")
-    var lastName: String,
+    var lastName: String?,
 
     @Column(name = "email")
     var email: String,
