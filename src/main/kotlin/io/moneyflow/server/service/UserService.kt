@@ -51,6 +51,10 @@ class UserService(
             throw BadCredentialsException("Invalid current password")
         }
 
+        updatePassword(user, newPassword)
+    }
+
+    fun updatePassword(user: User, newPassword: String) {
         user.password = passwordEncoder.encode(newPassword)
 
         save(user)

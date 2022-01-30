@@ -5,8 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch
 import io.moneyflow.server.dto.UserProfileDTO
+import io.moneyflow.server.entity.OperationConfirmationType
 import io.moneyflow.server.entity.User
 import io.moneyflow.server.http.request.UserLoginRequest
+import io.moneyflow.server.http.request.UserPasswordResetConfirmRequest
+import io.moneyflow.server.http.request.UserPasswordResetRequest
 import io.moneyflow.server.http.request.UserPasswordUpdateRequest
 import io.moneyflow.server.http.request.UserRegistrationRequest
 import io.moneyflow.server.http.response.UserLoginResponse
@@ -14,6 +17,7 @@ import io.moneyflow.server.mapper.UserMapper
 import io.moneyflow.server.response.ApiResponse
 import io.moneyflow.server.response.ErrorApiResponse
 import io.moneyflow.server.response.SuccessApiResponse
+import io.moneyflow.server.service.OperationConfirmationService
 import io.moneyflow.server.service.UserService
 import io.moneyflow.server.util.AuthTokenCredentials
 import io.moneyflow.server.util.JwtTokenUtil
@@ -21,9 +25,11 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.security.authentication.CredentialsExpiredException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.AuthenticationException
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Controller
 import org.springframework.validation.BeanPropertyBindingResult
 import org.springframework.validation.SmartValidator
@@ -33,6 +39,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
+import java.lang.IllegalArgumentException
 import javax.validation.Valid
 
 @Controller
@@ -43,7 +50,8 @@ class UserController(
     val userService: UserService,
     val jwtTokenUtil: JwtTokenUtil,
     val objectMapper: ObjectMapper,
-    val validator: SmartValidator
+    val validator: SmartValidator,
+    val operationConfirmationService: OperationConfirmationService
 ) {
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -128,12 +136,38 @@ class UserController(
     }
 
     @PostMapping("/password-reset/request")
-    fun passwordResetRequest() {
-        TODO("Implement password reset request")
+    fun passwordResetRequest(@Valid @RequestBody passwordResetRequest: UserPasswordResetRequest): ResponseEntity<ApiResponse> {
+        try {
+            val user = userService.loadUserByUsername(passwordResetRequest.email) as User
+            val confirmationToken = operationConfirmationService.issue(user, OperationConfirmationType.USER_PASSWORD_RESET, 60 * 60)
+            println(operationConfirmationService.encodeToken(confirmationToken))
+        } catch (e: UsernameNotFoundException) {
+            return ResponseEntity(ErrorApiResponse("USER_NOT_FOUND", e.message), HttpStatus.BAD_REQUEST)
+        }
+
+        return ResponseEntity(HttpStatus.NO_CONTENT)
     }
 
     @PostMapping("/password-reset/confirm")
-    fun passwordResetConfirm() {
-        TODO("Implement password reset confirmation")
+    fun passwordResetConfirm(@Valid @RequestBody passwordResetConfirmRequest: UserPasswordResetConfirmRequest): ResponseEntity<ApiResponse> {
+        try {
+            val token = operationConfirmationService.decodeToken(passwordResetConfirmRequest.token)
+            val operationConfirmation = operationConfirmationService.get(token, OperationConfirmationType.USER_PASSWORD_RESET)
+                ?: return ResponseEntity(ErrorApiResponse("INVALID_TOKEN", "Invalid token"), HttpStatus.BAD_REQUEST)
+
+            operationConfirmationService.verify(operationConfirmation, token)
+
+            userService.updatePassword(operationConfirmation.user!!, passwordResetConfirmRequest.password)
+
+            operationConfirmationService.purge(operationConfirmation)
+        } catch (e: IllegalArgumentException) {
+            return ResponseEntity(ErrorApiResponse("INVALID_TOKEN", e.message), HttpStatus.BAD_REQUEST)
+        } catch (e: BadCredentialsException) {
+            return ResponseEntity(ErrorApiResponse("INVALID_TOKEN", e.message), HttpStatus.BAD_REQUEST)
+        } catch (e: CredentialsExpiredException) {
+            return ResponseEntity(ErrorApiResponse("TOKEN_EXPIRED", e.message), HttpStatus.BAD_REQUEST)
+        }
+
+        return ResponseEntity(HttpStatus.NO_CONTENT)
     }
 }

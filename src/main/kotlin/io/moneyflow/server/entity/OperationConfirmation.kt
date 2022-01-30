@@ -16,19 +16,22 @@ import javax.persistence.Table
 class OperationConfirmation(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    val id: Long,
+    val id: Long?,
 
     @Column(name = "type")
     var type: OperationConfirmationType,
 
-    @Column(name = "nonce")
-    var nonce: String,
+    @Column(name = "series")
+    var series: String,
+
+    @Column(name = "token")
+    var token: String,
 
     @Column(name = "expiring_at")
     var expiringAt: LocalDateTime,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user")
+    @JoinColumn(name = "user_id")
     var user: User?,
 
     @Column(name = "target_id")
