@@ -20,7 +20,7 @@ class Household(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner")
-    var owner: User?,
+    var owner: User,
 
     @Column(name = "name")
     var name: String,

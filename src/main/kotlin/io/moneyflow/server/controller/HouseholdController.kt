@@ -4,11 +4,13 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch
 import io.moneyflow.server.dto.HouseholdDTO
+import io.moneyflow.server.entity.User
 import io.moneyflow.server.mapper.HouseholdMapper
 import io.moneyflow.server.response.ListApiResponse
 import io.moneyflow.server.service.HouseholdService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.validation.BeanPropertyBindingResult
 import org.springframework.validation.SmartValidator
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -34,16 +36,18 @@ class HouseholdController(
 ) {
     @PostMapping("")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun create(@Valid @RequestBody householdDTO: HouseholdDTO) {
+    fun create(@Valid @RequestBody householdDTO: HouseholdDTO, @AuthenticationPrincipal user: User) {
         val household = householdMapper.map(householdDTO)
+
+        household.owner = user
 
         householdService.save(household)
     }
 
     @GetMapping("")
     @ResponseStatus(HttpStatus.OK)
-    fun getList(@RequestParam(required = false, defaultValue = "0") page: Int, @RequestParam(required = false, defaultValue = "20") perPage: Int): ListApiResponse<HouseholdDTO> {
-        val households = householdService.getAll(page, perPage)
+    fun getList(@RequestParam(required = false, defaultValue = "0") page: Int, @RequestParam(required = false, defaultValue = "20") perPage: Int, @AuthenticationPrincipal user: User): ListApiResponse<HouseholdDTO> {
+        val households = householdService.getAllOwnedBy(page, perPage, user)
 
         return if (!households.isEmpty) {
             ListApiResponse(households.toList().map(householdMapper::map), households.totalElements)
@@ -53,11 +57,15 @@ class HouseholdController(
     }
 
     @PatchMapping(path = ["{id}"], consumes = ["application/merge-patch+json"])
-    fun update(@PathVariable id: Long, @RequestBody patch: JsonNode): ResponseEntity<Any> {
+    fun update(@PathVariable id: Long, @RequestBody patch: JsonNode, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
         var household = householdService.get(id)
 
         if (household == null) {
             return ResponseEntity(HttpStatus.NOT_FOUND)
+        }
+
+        if (household.owner != user) {
+            return ResponseEntity(HttpStatus.FORBIDDEN)
         }
 
         val householdDTO = householdMapper.map(household)
@@ -81,11 +89,15 @@ class HouseholdController(
     }
 
     @DeleteMapping(path = ["{id}"])
-    fun delete(@PathVariable id: Long): ResponseEntity<Any> {
+    fun delete(@PathVariable id: Long, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
         val household = householdService.get(id)
 
         if (household == null) {
             return ResponseEntity(HttpStatus.NOT_FOUND)
+        }
+
+        if (household.owner != user) {
+            return ResponseEntity(HttpStatus.FORBIDDEN)
         }
 
         householdService.delete(household.id!!)
