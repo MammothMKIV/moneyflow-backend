@@ -2,7 +2,6 @@ package io.moneyflow.server.controller
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch
 import io.moneyflow.server.dto.NamePlaceholderDTO
 import io.moneyflow.server.mapper.NamePlaceholderMapper
@@ -56,10 +55,6 @@ class NamePlaceholderController(
     @PatchMapping(path = ["{id}"], consumes = ["application/merge-patch+json"])
     fun update(@PathVariable id: Long, @RequestBody patch: JsonNode): ResponseEntity<Any> {
         var namePlaceholder = namePlaceholderService.get(id)
-
-        if (patch.has("id")) {
-            (patch as ObjectNode).remove("id")
-        }
 
         if (namePlaceholder == null) {
             return ResponseEntity(HttpStatus.NOT_FOUND)

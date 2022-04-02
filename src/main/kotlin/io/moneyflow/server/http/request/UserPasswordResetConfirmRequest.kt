@@ -4,10 +4,10 @@ import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Size
 
 data class UserPasswordResetConfirmRequest(
-    @NotBlank
+    @field:NotBlank(message = "Token must not be empty")
     val token: String,
 
-    @NotBlank
-    @Size(min = 6)
+    @field:NotBlank(message = "Password must not be empty")
+    @field:Size(min = 6, message = "Password must be at least 6 characters long")
     val password: String,
 )

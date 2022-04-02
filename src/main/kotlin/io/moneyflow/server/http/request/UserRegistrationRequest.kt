@@ -9,11 +9,11 @@ data class UserRegistrationRequest(
 
     val lastName: String?,
 
-    @Email
-    @NotBlank
+    @field:Email(message = "Invalid email")
+    @field:NotBlank(message = "Email must not be empty")
     val email: String,
 
-    @NotBlank
-    @Size(min = 6)
+    @field:NotBlank(message = "Password must not be empty")
+    @field:Size(min = 6, message = "Password must be at least 6 characters long")
     val password: String
 )

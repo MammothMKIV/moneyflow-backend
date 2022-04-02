@@ -3,20 +3,18 @@ package io.moneyflow.server.dto
 import javax.validation.constraints.NotNull
 import java.math.BigDecimal
 import java.time.LocalDate
-import javax.validation.constraints.Null
 
 data class TransactionDTO(
-    @Null
     var id: Long?,
 
-    @NotNull
+    @field:NotNull(message = "Date must not be empty")
     var date: LocalDate?,
 
     var accountFrom: Long?,
 
     var accountTo: Long?,
 
-    @NotNull
+    @field:NotNull(message = "Amount must not be empty")
     var amount: BigDecimal?,
 
     var category: Long?,

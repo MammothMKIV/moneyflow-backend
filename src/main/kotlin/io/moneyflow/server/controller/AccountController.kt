@@ -2,7 +2,6 @@ package io.moneyflow.server.controller
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch
 import io.moneyflow.server.dto.AccountDTO
 import io.moneyflow.server.mapper.AccountMapper
@@ -56,10 +55,6 @@ class AccountController(
     @PatchMapping(path = ["{id}"], consumes = ["application/merge-patch+json"])
     fun update(@PathVariable id: Long, @RequestBody patch: JsonNode): ResponseEntity<Any> {
         var account = accountService.get(id)
-
-        if (patch.has("id")) {
-            (patch as ObjectNode).remove("id")
-        }
 
         if (account == null) {
             return ResponseEntity(HttpStatus.NOT_FOUND)

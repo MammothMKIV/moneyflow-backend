@@ -17,7 +17,7 @@ import org.springframework.web.filter.CorsFilter
 import javax.servlet.http.HttpServletResponse
 
 @EnableWebSecurity(
-    debug = true
+    debug = false
 )
 class WebSecurityConfig(
     val jwtTokenFilter: JwtTokenFilter,

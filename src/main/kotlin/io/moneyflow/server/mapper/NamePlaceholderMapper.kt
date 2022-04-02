@@ -20,10 +20,16 @@ interface NamePlaceholderMapper {
 
     fun map(namePlaceholder: NamePlaceholder): NamePlaceholderDTO
 
+    @Mappings(
+        value = [
+            Mapping(target = "id", ignore = true)
+        ]
+    )
     fun map(namePlaceholderDTO: NamePlaceholderDTO): NamePlaceholder
 
     @Mappings(
         value = [
+            Mapping(target = "id", ignore = true),
             Mapping(target = "type", ignore = true),
             Mapping(target = "household", ignore = true)
         ]

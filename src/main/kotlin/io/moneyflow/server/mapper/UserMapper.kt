@@ -19,6 +19,11 @@ import org.mapstruct.Mappings
 interface UserMapper {
     fun map(user: User): UserProfileDTO
 
+    @Mappings(
+        value = [
+            Mapping(target = "id", ignore = true)
+        ]
+    )
     fun map(userProfileDTO: UserProfileDTO): User
 
     @Mappings(
@@ -28,5 +33,11 @@ interface UserMapper {
     )
     fun map(userRegistrationRequest: UserRegistrationRequest): User
 
+    @Mappings(
+        value = [
+            Mapping(target = "id", ignore = true),
+            Mapping(target = "createdAt", ignore = true)
+        ]
+    )
     fun merge(transactionDTO: UserProfileDTO, @MappingTarget user: User): User
 }

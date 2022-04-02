@@ -4,7 +4,7 @@ import javax.validation.constraints.Email
 import javax.validation.constraints.NotBlank
 
 data class UserPasswordResetRequest(
-    @NotBlank
-    @Email
+    @field:NotBlank(message = "Email must not be empty")
+    @field:Email(message = "Invalid email")
     val email: String,
 )

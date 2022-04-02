@@ -1,12 +1,10 @@
 package io.moneyflow.server.dto
 
-import javax.validation.constraints.NotNull
-import javax.validation.constraints.Null
+import javax.validation.constraints.NotBlank
 
 data class HouseholdDTO(
-    @Null
     var id: Long?,
 
-    @NotNull
+    @field:NotBlank(message = "Name must not be empty")
     var name: String,
 )

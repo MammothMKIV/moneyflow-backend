@@ -1,19 +1,18 @@
 package io.moneyflow.server.dto
 
 import io.moneyflow.server.entity.NamePlaceholderType
+import javax.validation.constraints.NotBlank
 import javax.validation.constraints.NotNull
-import javax.validation.constraints.Null
 
 data class NamePlaceholderDTO(
-    @Null
     val id: Long,
 
-    @NotNull
+    @field:NotBlank(message = "Name must not be empty")
     var name: String,
 
-    @NotNull
+    @field:NotNull(message = "Type must not be empty")
     var type: NamePlaceholderType,
 
-    @NotNull
+    @field:NotNull(message = "Household must not be empty")
     var household: Long,
 )

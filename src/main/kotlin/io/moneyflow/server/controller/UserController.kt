@@ -2,7 +2,6 @@ package io.moneyflow.server.controller
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ObjectNode
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch
 import io.moneyflow.server.dto.UserProfileDTO
 import io.moneyflow.server.entity.OperationConfirmationType
@@ -21,6 +20,7 @@ import io.moneyflow.server.service.OperationConfirmationService
 import io.moneyflow.server.service.UserService
 import io.moneyflow.server.util.AuthTokenCredentials
 import io.moneyflow.server.util.JwtTokenUtil
+import org.springframework.core.MethodParameter
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationManager
@@ -33,6 +33,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Controller
 import org.springframework.validation.BeanPropertyBindingResult
 import org.springframework.validation.SmartValidator
+import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -85,7 +86,7 @@ class UserController(
                 HttpStatus.OK
             )
         } catch (e: AuthenticationException) {
-            return ResponseEntity(ErrorApiResponse("INVALID_CREDENTIALS", "Username or password is incorrect"), HttpStatus.BAD_REQUEST)
+            return ResponseEntity(ErrorApiResponse("INVALID_CREDENTIALS", "Username or password is incorrect", null), HttpStatus.BAD_REQUEST)
         }
     }
 
@@ -96,14 +97,6 @@ class UserController(
 
     @PatchMapping("/profile", consumes = ["application/merge-patch+json"])
     fun updateProfile(@RequestBody patch: JsonNode, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
-        if (patch.has("id")) {
-            (patch as ObjectNode).remove("id")
-        }
-
-        if (patch.has("createdAt")) {
-            (patch as ObjectNode).remove("createdAt")
-        }
-
         val userProfileDTO = userMapper.map(user)
         val original: JsonNode = objectMapper.valueToTree(userProfileDTO)
         val patched: JsonNode = JsonMergePatch.fromJson(patch).apply(original)
@@ -114,7 +107,7 @@ class UserController(
         validator.validate(patchedUserProfileDTO, validationErrors)
 
         if (validationErrors.hasErrors()) {
-            return ResponseEntity(HttpStatus.BAD_REQUEST)
+            throw MethodArgumentNotValidException(MethodParameter(this.javaClass.getDeclaredMethod("updateProfile", JsonNode::class.java, User::class.java), 0), validationErrors)
         }
 
         val updatedUser = userMapper.merge(patchedUserProfileDTO, user)
@@ -129,7 +122,7 @@ class UserController(
         try {
             userService.updatePassword(user, userPasswordUpdateRequest.oldPassword, userPasswordUpdateRequest.newPassword)
         } catch (e: BadCredentialsException) {
-            return ResponseEntity(ErrorApiResponse("INVALID_CREDENTIALS", e.message), HttpStatus.BAD_REQUEST)
+            return ResponseEntity(ErrorApiResponse("INVALID_CREDENTIALS", e.message, null), HttpStatus.BAD_REQUEST)
         }
 
         return ResponseEntity(HttpStatus.NO_CONTENT)
@@ -142,7 +135,7 @@ class UserController(
             val confirmationToken = operationConfirmationService.issue(user, OperationConfirmationType.USER_PASSWORD_RESET, 60 * 60)
             println(operationConfirmationService.encodeToken(confirmationToken))
         } catch (e: UsernameNotFoundException) {
-            return ResponseEntity(ErrorApiResponse("USER_NOT_FOUND", e.message), HttpStatus.BAD_REQUEST)
+            return ResponseEntity(ErrorApiResponse("USER_NOT_FOUND", e.message, null), HttpStatus.BAD_REQUEST)
         }
 
         return ResponseEntity(HttpStatus.NO_CONTENT)
@@ -153,7 +146,7 @@ class UserController(
         try {
             val token = operationConfirmationService.decodeToken(passwordResetConfirmRequest.token)
             val operationConfirmation = operationConfirmationService.get(token, OperationConfirmationType.USER_PASSWORD_RESET)
-                ?: return ResponseEntity(ErrorApiResponse("INVALID_TOKEN", "Invalid token"), HttpStatus.BAD_REQUEST)
+                ?: return ResponseEntity(ErrorApiResponse("INVALID_TOKEN", "Invalid token", null), HttpStatus.BAD_REQUEST)
 
             operationConfirmationService.verify(operationConfirmation, token)
 
@@ -161,11 +154,11 @@ class UserController(
 
             operationConfirmationService.purge(operationConfirmation)
         } catch (e: IllegalArgumentException) {
-            return ResponseEntity(ErrorApiResponse("INVALID_TOKEN", e.message), HttpStatus.BAD_REQUEST)
+            return ResponseEntity(ErrorApiResponse("INVALID_TOKEN", e.message, null), HttpStatus.BAD_REQUEST)
         } catch (e: BadCredentialsException) {
-            return ResponseEntity(ErrorApiResponse("INVALID_TOKEN", e.message), HttpStatus.BAD_REQUEST)
+            return ResponseEntity(ErrorApiResponse("INVALID_TOKEN", e.message, null), HttpStatus.BAD_REQUEST)
         } catch (e: CredentialsExpiredException) {
-            return ResponseEntity(ErrorApiResponse("TOKEN_EXPIRED", e.message), HttpStatus.BAD_REQUEST)
+            return ResponseEntity(ErrorApiResponse("TOKEN_EXPIRED", e.message, null), HttpStatus.BAD_REQUEST)
         }
 
         return ResponseEntity(HttpStatus.NO_CONTENT)

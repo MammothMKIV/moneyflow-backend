@@ -39,7 +39,7 @@ dependencies {
 
 tasks.withType<KotlinCompile> {
     kotlinOptions {
-        freeCompilerArgs = listOf("-Xjsr305=strict", "-Xjvm-default=all")
+        freeCompilerArgs = listOf("-Xjsr305=strict", "-Xjvm-default=all", "-Xemit-jvm-type-annotations")
         jvmTarget = "17"
     }
 }
