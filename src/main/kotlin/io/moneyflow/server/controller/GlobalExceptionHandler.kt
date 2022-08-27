@@ -4,6 +4,7 @@ import io.moneyflow.server.response.ErrorApiResponse
 import org.springframework.http.HttpStatus
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.MissingPathVariableException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseBody
@@ -25,5 +26,12 @@ class GlobalExceptionHandler {
         } }
 
         return ErrorApiResponse("VALIDATION_ERROR", "Invalid request data", errors)
+    }
+
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    @ExceptionHandler(MissingPathVariableException::class)
+    fun handleValidationExceptions(e: MissingPathVariableException) {
+
     }
 }

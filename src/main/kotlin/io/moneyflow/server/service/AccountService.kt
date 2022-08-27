@@ -1,6 +1,7 @@
 package io.moneyflow.server.service
 
 import io.moneyflow.server.entity.Account
+import io.moneyflow.server.entity.Household
 import io.moneyflow.server.repository.AccountRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -11,8 +12,8 @@ import org.springframework.stereotype.Service
 class AccountService(
     val accountRepository: AccountRepository
 ) {
-    fun getAll(page: Int, perPage: Int): Page<Account> {
-        return accountRepository.findAll(PageRequest.of(page, perPage, Sort.by("createdAt").descending()))
+    fun getAllByHouseholds(page: Int, perPage: Int, households: List<Household>): Page<Account> {
+        return accountRepository.findAllByHouseholdIn(households, PageRequest.of(page, perPage, Sort.by("createdAt").descending()))
     }
 
     fun save(account: Account) {

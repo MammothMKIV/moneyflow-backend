@@ -2,6 +2,7 @@ package io.moneyflow.server.mapper
 
 import io.moneyflow.server.dto.AccountDTO
 import io.moneyflow.server.entity.Account
+import io.moneyflow.server.entity.Household
 import org.mapstruct.Mapper
 import org.mapstruct.Mapping
 import org.mapstruct.MappingTarget
@@ -10,8 +11,9 @@ import org.mapstruct.Mappings
 @Mapper(
     componentModel = "spring",
     uses = [
-        ReferenceMapper::class
-    ]
+        ReferenceMapper::class,
+        HouseholdMapper::class
+    ],
 )
 interface AccountMapper {
     fun toEntity(id: Long?): Account?
@@ -31,4 +33,8 @@ interface AccountMapper {
         ]
     )
     fun merge(accountDTO: AccountDTO, @MappingTarget account: Account): Account
+
+    fun householdId(household: Household?): Long? {
+        return household?.id
+    }
 }

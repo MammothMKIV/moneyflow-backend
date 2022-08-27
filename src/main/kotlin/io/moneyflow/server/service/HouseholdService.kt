@@ -16,6 +16,10 @@ class HouseholdService(
         return householdRepository.findAllByOwner(owner, PageRequest.of(page, perPage, Sort.by("createdAt").descending()))
     }
 
+    fun getAllOwnedBy(owner: User): List<Household> {
+        return householdRepository.findAllByOwner(owner)
+    }
+
     fun save(household: Household) {
         householdRepository.save(household)
     }

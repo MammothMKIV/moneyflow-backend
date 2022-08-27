@@ -10,4 +10,6 @@ import org.springframework.data.repository.PagingAndSortingRepository
 
 interface HouseholdRepository : PagingAndSortingRepository<Household, Long> {
     fun findAllByOwner(owner: User, pageable: Pageable): Page<Household>
+
+    fun findAllByOwner(owner: User): List<Household>
 }

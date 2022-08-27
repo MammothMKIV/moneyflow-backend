@@ -19,8 +19,8 @@ class Account(
     val id: Long?,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner")
-    var owner: User?,
+    @JoinColumn(name = "household")
+    var household: Household,
 
     @Column(name = "created_at")
     var createdAt: LocalDateTime?,
