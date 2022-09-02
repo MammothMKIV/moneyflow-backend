@@ -1,18 +1,16 @@
 package io.moneyflow.server.service
 
 import io.moneyflow.server.entity.Category
+import io.moneyflow.server.entity.Household
 import io.moneyflow.server.repository.CategoryRepository
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 
 @Service
 class CategoryService(
     val categoryRepository: CategoryRepository
 ) {
-    fun getAll(page: Int, perPage: Int): Page<Category> {
-        return categoryRepository.findAll(PageRequest.of(page, perPage, Sort.by("createdAt").descending()))
+    fun getByHousehold(household: Household): List<Category> {
+        return categoryRepository.findByHousehold(household)
     }
 
     fun save(category: Category) {

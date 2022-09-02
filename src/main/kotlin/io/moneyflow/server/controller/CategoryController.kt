@@ -4,11 +4,16 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch
 import io.moneyflow.server.dto.CategoryDTO
+import io.moneyflow.server.entity.Category
+import io.moneyflow.server.entity.Household
+import io.moneyflow.server.entity.User
 import io.moneyflow.server.mapper.CategoryMapper
 import io.moneyflow.server.response.ListApiResponse
+import io.moneyflow.server.service.AccessControlService
 import io.moneyflow.server.service.CategoryService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.validation.BeanPropertyBindingResult
 import org.springframework.validation.SmartValidator
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -30,34 +35,38 @@ class CategoryController(
     val categoryService: CategoryService,
     val categoryMapper: CategoryMapper,
     val objectMapper: ObjectMapper,
-    val validator: SmartValidator
+    val validator: SmartValidator,
+    val accessControlService: AccessControlService
 ) {
     @PostMapping("")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun create(@Valid @RequestBody categoryDTO: CategoryDTO) {
+    fun create(@Valid @RequestBody categoryDTO: CategoryDTO, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
         val category = categoryMapper.map(categoryDTO)
 
+        if (!accessControlService.canManageHousehold(user, category.household)) {
+            return ResponseEntity(HttpStatus.FORBIDDEN)
+        }
+
         categoryService.save(category)
+
+        return ResponseEntity(HttpStatus.NO_CONTENT)
     }
 
     @GetMapping("")
     @ResponseStatus(HttpStatus.OK)
-    fun getList(@RequestParam(required = false, defaultValue = "0") page: Int, @RequestParam(required = false, defaultValue = "20") perPage: Int): ListApiResponse<CategoryDTO> {
-        val categories = categoryService.getAll(page, perPage)
+    fun getList(@RequestParam(required = true, name = "household") household: Household): ListApiResponse<CategoryDTO> {
+        val categories = categoryService.getByHousehold(household)
 
-        return if (!categories.isEmpty) {
-            ListApiResponse(categories.toList().map(categoryMapper::map), categories.totalElements)
+        return if (categories.isNotEmpty()) {
+            ListApiResponse(categories.toList().map(categoryMapper::map), categories.size.toLong())
         } else {
             ListApiResponse(Collections.emptyList(), 0)
         }
     }
 
     @PatchMapping(path = ["{id}"], consumes = ["application/merge-patch+json"])
-    fun update(@PathVariable id: Long, @RequestBody patch: JsonNode): ResponseEntity<Any> {
-        var category = categoryService.get(id)
-
-        if (category == null) {
-            return ResponseEntity(HttpStatus.NOT_FOUND)
+    fun update(@PathVariable("id") category: Category, @RequestBody patch: JsonNode, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
+        if (!accessControlService.canManageHousehold(user, category.household)) {
+            return ResponseEntity(HttpStatus.FORBIDDEN)
         }
 
         val categoryDTO = categoryMapper.map(category)
@@ -73,19 +82,17 @@ class CategoryController(
             return ResponseEntity(HttpStatus.BAD_REQUEST)
         }
 
-        category = categoryMapper.merge(patchedCategoryDTO, category)
+        val patchedCategory = categoryMapper.merge(patchedCategoryDTO, category)
 
-        categoryService.save(category)
+        categoryService.save(patchedCategory)
 
         return ResponseEntity(HttpStatus.NO_CONTENT)
     }
 
     @DeleteMapping(path = ["{id}"])
-    fun delete(@PathVariable id: Long): ResponseEntity<Any> {
-        val category = categoryService.get(id)
-
-        if (category == null) {
-            return ResponseEntity(HttpStatus.NOT_FOUND)
+    fun delete(@PathVariable("id") category: Category, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
+        if (!accessControlService.canManageHousehold(user, category.household)) {
+            return ResponseEntity(HttpStatus.FORBIDDEN)
         }
 
         categoryService.delete(category.id!!)

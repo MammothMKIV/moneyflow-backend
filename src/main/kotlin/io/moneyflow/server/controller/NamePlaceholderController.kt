@@ -4,11 +4,16 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch
 import io.moneyflow.server.dto.NamePlaceholderDTO
+import io.moneyflow.server.entity.Household
+import io.moneyflow.server.entity.NamePlaceholder
+import io.moneyflow.server.entity.User
 import io.moneyflow.server.mapper.NamePlaceholderMapper
 import io.moneyflow.server.response.ListApiResponse
+import io.moneyflow.server.service.AccessControlService
 import io.moneyflow.server.service.NamePlaceholderService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.validation.BeanPropertyBindingResult
 import org.springframework.validation.SmartValidator
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -30,34 +35,41 @@ class NamePlaceholderController(
     val namePlaceholderService: NamePlaceholderService,
     val namePlaceholderMapper: NamePlaceholderMapper,
     val objectMapper: ObjectMapper,
-    val validator: SmartValidator
+    val validator: SmartValidator,
+    val accessControlService: AccessControlService
 ) {
     @PostMapping("")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun create(@Valid @RequestBody namePlaceholderDTO: NamePlaceholderDTO) {
+    fun create(@Valid @RequestBody namePlaceholderDTO: NamePlaceholderDTO, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
         val namePlaceholder = namePlaceholderMapper.map(namePlaceholderDTO)
 
+        if (!accessControlService.canManageHousehold(user, namePlaceholder.household)) {
+            return ResponseEntity(HttpStatus.FORBIDDEN)
+        }
+
         namePlaceholderService.save(namePlaceholder)
+
+        return ResponseEntity(HttpStatus.NO_CONTENT)
     }
 
     @GetMapping("")
-    @ResponseStatus(HttpStatus.OK)
-    fun getList(@RequestParam(required = false, defaultValue = "0") page: Int, @RequestParam(required = false, defaultValue = "20") perPage: Int): ListApiResponse<NamePlaceholderDTO> {
-        val namePlaceholders = namePlaceholderService.getAll(page, perPage)
+    fun getList(@RequestParam(required = true, name = "household") household: Household, @AuthenticationPrincipal user: User): ResponseEntity<ListApiResponse<NamePlaceholderDTO>> {
+        if (!accessControlService.canManageHousehold(user, household)) {
+            return ResponseEntity(HttpStatus.FORBIDDEN)
+        }
 
-        return if (!namePlaceholders.isEmpty) {
-            ListApiResponse(namePlaceholders.toList().map(namePlaceholderMapper::map), namePlaceholders.totalElements)
+        val namePlaceholders = namePlaceholderService.getByHousehold(household)
+
+        return if (namePlaceholders.isNotEmpty()) {
+            ResponseEntity(ListApiResponse(namePlaceholders.toList().map(namePlaceholderMapper::map), namePlaceholders.size.toLong()), HttpStatus.OK)
         } else {
-            ListApiResponse(Collections.emptyList(), 0)
+            ResponseEntity(ListApiResponse(Collections.emptyList(), 0), HttpStatus.OK)
         }
     }
 
     @PatchMapping(path = ["{id}"], consumes = ["application/merge-patch+json"])
-    fun update(@PathVariable id: Long, @RequestBody patch: JsonNode): ResponseEntity<Any> {
-        var namePlaceholder = namePlaceholderService.get(id)
-
-        if (namePlaceholder == null) {
-            return ResponseEntity(HttpStatus.NOT_FOUND)
+    fun update(@PathVariable("id") namePlaceholder: NamePlaceholder, @RequestBody patch: JsonNode, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
+        if (!accessControlService.canManageHousehold(user, namePlaceholder.household)) {
+            return ResponseEntity(HttpStatus.FORBIDDEN)
         }
 
         val namePlaceholderDTO = namePlaceholderMapper.map(namePlaceholder)
@@ -73,19 +85,17 @@ class NamePlaceholderController(
             return ResponseEntity(HttpStatus.BAD_REQUEST)
         }
 
-        namePlaceholder = namePlaceholderMapper.merge(patchedNamePlaceholderDTO, namePlaceholder)
+        val patchedNamePlaceholder = namePlaceholderMapper.merge(patchedNamePlaceholderDTO, namePlaceholder)
 
-        namePlaceholderService.save(namePlaceholder)
+        namePlaceholderService.save(patchedNamePlaceholder)
 
         return ResponseEntity(HttpStatus.NO_CONTENT)
     }
 
     @DeleteMapping(path = ["{id}"])
-    fun delete(@PathVariable id: Long): ResponseEntity<Any> {
-        val namePlaceholder = namePlaceholderService.get(id)
-
-        if (namePlaceholder == null) {
-            return ResponseEntity(HttpStatus.NOT_FOUND)
+    fun delete(@PathVariable("id") namePlaceholder: NamePlaceholder, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
+        if (!accessControlService.canManageHousehold(user, namePlaceholder.household)) {
+            return ResponseEntity(HttpStatus.FORBIDDEN)
         }
 
         namePlaceholderService.delete(namePlaceholder.id)

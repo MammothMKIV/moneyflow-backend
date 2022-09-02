@@ -33,18 +33,17 @@ import javax.validation.Valid
 @RequestMapping("/accounts")
 class AccountController(
     val accountService: AccountService,
-    val accessControlService: AccessControlService,
     val householdService: HouseholdService,
     val accountMapper: AccountMapper,
     val objectMapper: ObjectMapper,
-    val validator: SmartValidator
+    val validator: SmartValidator,
+    val accessControlService: AccessControlService
 ) {
     @PostMapping("")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     fun create(@Valid @RequestBody accountDTO: AccountDTO, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
         val account = accountMapper.map(accountDTO)
 
-        if (!accessControlService.canCreateAccountsInHousehold(user, account.household)) {
+        if (!accessControlService.canManageHousehold(user, account.household)) {
             return ResponseEntity(HttpStatus.FORBIDDEN)
         }
 
@@ -67,7 +66,7 @@ class AccountController(
 
     @PatchMapping(path = ["{id}"], consumes = ["application/merge-patch+json"])
     fun update(@PathVariable("id") account: Account, @RequestBody patch: JsonNode, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
-        if (!accessControlService.canEditAccount(user, account)) {
+        if (!accessControlService.canManageHousehold(user, account.household)) {
             return ResponseEntity(HttpStatus.FORBIDDEN)
         }
 
@@ -93,7 +92,7 @@ class AccountController(
 
     @DeleteMapping(path = ["{id}"])
     fun delete(@PathVariable("id") account: Account, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
-        if (!accessControlService.canDeleteAccount(user, account)) {
+        if (!accessControlService.canManageHousehold(user, account.household)) {
             return ResponseEntity(HttpStatus.FORBIDDEN)
         }
 

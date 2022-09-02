@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.fge.jsonpatch.mergepatch.JsonMergePatch
 import io.moneyflow.server.dto.HouseholdDTO
+import io.moneyflow.server.entity.Household
 import io.moneyflow.server.entity.User
 import io.moneyflow.server.mapper.HouseholdMapper
 import io.moneyflow.server.response.ListApiResponse
+import io.moneyflow.server.service.AccessControlService
 import io.moneyflow.server.service.HouseholdService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -32,7 +34,8 @@ class HouseholdController(
     val householdService: HouseholdService,
     val householdMapper: HouseholdMapper,
     val objectMapper: ObjectMapper,
-    val validator: SmartValidator
+    val validator: SmartValidator,
+    val accessControlService: AccessControlService
 ) {
     @PostMapping("")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -57,14 +60,8 @@ class HouseholdController(
     }
 
     @PatchMapping(path = ["{id}"], consumes = ["application/merge-patch+json"])
-    fun update(@PathVariable id: Long, @RequestBody patch: JsonNode, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
-        var household = householdService.get(id)
-
-        if (household == null) {
-            return ResponseEntity(HttpStatus.NOT_FOUND)
-        }
-
-        if (household.owner != user) {
+    fun update(@PathVariable("id") household: Household, @RequestBody patch: JsonNode, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
+        if (!accessControlService.canManageHousehold(user, household)) {
             return ResponseEntity(HttpStatus.FORBIDDEN)
         }
 
@@ -81,22 +78,16 @@ class HouseholdController(
             return ResponseEntity(HttpStatus.BAD_REQUEST)
         }
 
-        household = householdMapper.merge(patchedHouseholdDTO, household)
+        val patchedHousehold = householdMapper.merge(patchedHouseholdDTO, household)
 
-        householdService.save(household)
+        householdService.save(patchedHousehold)
 
         return ResponseEntity(HttpStatus.NO_CONTENT)
     }
 
     @DeleteMapping(path = ["{id}"])
-    fun delete(@PathVariable id: Long, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
-        val household = householdService.get(id)
-
-        if (household == null) {
-            return ResponseEntity(HttpStatus.NOT_FOUND)
-        }
-
-        if (household.owner != user) {
+    fun delete(@PathVariable("id") household: Household, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
+        if (!accessControlService.canManageHousehold(user, household)) {
             return ResponseEntity(HttpStatus.FORBIDDEN)
         }
 
