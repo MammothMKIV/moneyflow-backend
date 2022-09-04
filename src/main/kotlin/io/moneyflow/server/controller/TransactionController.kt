@@ -59,7 +59,7 @@ class TransactionController(
             return ResponseEntity(HttpStatus.FORBIDDEN)
         }
 
-        val transactions = transactionService.search(query)
+        val transactions = transactionService.search(query, user)
 
         return if (!transactions.isEmpty) {
             ResponseEntity(ListApiResponse(transactions.toList().map(transactionMapper::map), transactions.totalElements), HttpStatus.OK)

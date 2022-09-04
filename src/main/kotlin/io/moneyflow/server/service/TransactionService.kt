@@ -5,6 +5,7 @@ import io.moneyflow.server.entity.Category
 import io.moneyflow.server.entity.Household
 import io.moneyflow.server.repository.query.TransactionSearchQuery
 import io.moneyflow.server.entity.Transaction
+import io.moneyflow.server.entity.User
 import io.moneyflow.server.repository.TransactionRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -14,12 +15,18 @@ import javax.persistence.criteria.Predicate
 
 @Service
 class TransactionService(
-    val transactionRepository: TransactionRepository
+    val transactionRepository: TransactionRepository,
+    val householdService: HouseholdService,
 ) {
-    fun search(query: TransactionSearchQuery): Page<Transaction> {
+    fun search(query: TransactionSearchQuery, user: User): Page<Transaction> {
         val page = query.page ?: 0
         val perPage = query.perPage ?: 20
         val pageable = PageRequest.ofSize(perPage).withPage(page).withSort(Sort.by("date").descending().and(Sort.by("id").descending()))
+        val userHouseholds = householdService.getAllOwnedBy(user)
+
+        if (userHouseholds.isEmpty()) {
+            return Page.empty()
+        }
 
         return transactionRepository.findAll({root, q, builder ->
             val predicates = ArrayList<Predicate>()
@@ -52,6 +59,13 @@ class TransactionService(
                     )
                 )
             }
+
+            predicates.add(
+                builder.or(
+                    root.get<Account>("accountFrom").get<Household>("household").`in`(userHouseholds),
+                    root.get<Account>("accountTo").get<Household>("household").`in`(userHouseholds),
+                )
+            )
 
             builder.and(*predicates.toTypedArray())
         }, pageable)
