@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
+import javax.persistence.criteria.JoinType
 import javax.persistence.criteria.Predicate
 
 @Service
@@ -50,6 +51,9 @@ class TransactionService(
             if (query.dateFrom != null) {
                 predicates.add(builder.greaterThanOrEqualTo(root.get("date"), query.dateFrom))
             }
+
+            root.join<Transaction, Account>("accountFrom", JoinType.LEFT)
+            root.join<Transaction, Account>("accountTo", JoinType.LEFT)
 
             if (query.household != null) {
                 predicates.add(
