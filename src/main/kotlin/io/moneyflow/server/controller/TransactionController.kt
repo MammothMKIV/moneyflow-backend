@@ -7,6 +7,8 @@ import io.moneyflow.server.repository.query.TransactionSearchQuery
 import io.moneyflow.server.dto.TransactionDTO
 import io.moneyflow.server.entity.Transaction
 import io.moneyflow.server.entity.User
+import io.moneyflow.server.helper.ApiResponseBuilder
+import io.moneyflow.server.helper.ValidationHelper
 import io.moneyflow.server.mapper.TransactionMapper
 import io.moneyflow.server.response.ListApiResponse
 import io.moneyflow.server.service.AccessControlService
@@ -15,6 +17,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.validation.BeanPropertyBindingResult
+import org.springframework.validation.FieldError
 import org.springframework.validation.SmartValidator
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -40,6 +43,8 @@ class TransactionController(
     fun create(@Valid @RequestBody transactionDTO: TransactionDTO, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
         val transaction = transactionMapper.map(transactionDTO)
 
+        // @TODO: add category ownership checks
+        // @TODO: embed ACL checks into validation
         if (accessControlService.canManageTransactionHouseholds(user, transaction)) {
             return ResponseEntity(HttpStatus.FORBIDDEN)
         }
@@ -84,11 +89,13 @@ class TransactionController(
         validator.validate(patchedTransactionDTO, validationErrors)
 
         if (validationErrors.hasErrors()) {
-            return ResponseEntity(HttpStatus.BAD_REQUEST)
+            return ResponseEntity(ApiResponseBuilder.buildValidationError(ValidationHelper.bindingResultToErrorMap(validationErrors)), HttpStatus.BAD_REQUEST)
         }
 
         val patchedTransaction = transactionMapper.merge(patchedTransactionDTO, transaction)
 
+        // @TODO: add category ownership checks
+        // @TODO: embed ACL checks into validation
         if (accessControlService.canManageTransactionHouseholds(user, patchedTransaction)) {
             return ResponseEntity(HttpStatus.FORBIDDEN)
         }

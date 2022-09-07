@@ -11,6 +11,7 @@ import kotlin.reflect.KClass
 annotation class ExistingEntity(
     val message: String,
     val entityType: KClass<*>,
+    val optional: Boolean = false,
     val groups: Array<KClass<*>> = [],
     val payload: Array<KClass<out Payload>> = []
 )

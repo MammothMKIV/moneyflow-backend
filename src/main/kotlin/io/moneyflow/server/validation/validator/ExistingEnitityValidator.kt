@@ -22,6 +22,10 @@ class ExistingEntityValidator(
             return false
         }
 
+        if (value == null && constraintAnnotation!!.optional) {
+            return true
+        }
+
         return try {
             if (value == null) false else entityManager.getReference(constraintAnnotation!!.entityType.java, value) != null
         } catch (e: EntityNotFoundException) {

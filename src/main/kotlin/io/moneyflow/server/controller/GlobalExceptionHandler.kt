@@ -1,5 +1,7 @@
 package io.moneyflow.server.controller
 
+import io.moneyflow.server.helper.ApiResponseBuilder
+import io.moneyflow.server.helper.ValidationHelper
 import io.moneyflow.server.response.ErrorApiResponse
 import org.springframework.http.HttpStatus
 import org.springframework.validation.BindException
@@ -17,16 +19,7 @@ class GlobalExceptionHandler {
     @ResponseBody
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleValidationExceptions(e: MethodArgumentNotValidException): ErrorApiResponse {
-        val errors = HashMap<String, String>()
-
-        e.bindingResult.allErrors.forEach { error -> run {
-            val fieldName = (error as FieldError).field
-            val errorMessage = error.defaultMessage
-
-            errors[fieldName] = errorMessage!!
-        } }
-
-        return ErrorApiResponse("VALIDATION_ERROR", "Invalid request data", errors)
+        return ApiResponseBuilder.buildValidationError(ValidationHelper.bindingResultToErrorMap(e.bindingResult))
     }
 
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -48,6 +41,6 @@ class GlobalExceptionHandler {
             errors[fieldName] = "Invalid value: " + error.rejectedValue
         } }
 
-        return ErrorApiResponse("BAD_PARAMETER_FORMAT", "Invalid parameter format", errors)
+        return ApiResponseBuilder.buildValidationError(errors)
     }
 }
