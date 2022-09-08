@@ -12,7 +12,8 @@ class AccessControlService {
     }
 
     fun canManageTransactionHouseholds(user: User, transaction: Transaction): Boolean {
-        return (transaction.accountFrom != null && !canManageHousehold(user, transaction.accountFrom!!.household))
-            || (transaction.accountTo != null && !canManageHousehold(user, transaction.accountTo!!.household))
+        return (transaction.category == null || canManageHousehold(user, transaction.category!!.household))
+                && (transaction.accountFrom == null || canManageHousehold(user, transaction.accountFrom!!.household))
+                && (transaction.accountTo == null || canManageHousehold(user, transaction.accountTo!!.household))
     }
 }

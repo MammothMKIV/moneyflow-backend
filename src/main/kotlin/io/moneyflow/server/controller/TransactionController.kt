@@ -43,9 +43,8 @@ class TransactionController(
     fun create(@Valid @RequestBody transactionDTO: TransactionDTO, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
         val transaction = transactionMapper.map(transactionDTO)
 
-        // @TODO: add category ownership checks
         // @TODO: embed ACL checks into validation
-        if (accessControlService.canManageTransactionHouseholds(user, transaction)) {
+        if (!accessControlService.canManageTransactionHouseholds(user, transaction)) {
             return ResponseEntity(HttpStatus.FORBIDDEN)
         }
 
@@ -75,7 +74,7 @@ class TransactionController(
 
     @PatchMapping(path = ["{id}"], consumes = ["application/merge-patch+json"])
     fun update(@PathVariable("id") transaction: Transaction, @RequestBody patch: JsonNode, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
-        if (accessControlService.canManageTransactionHouseholds(user, transaction)) {
+        if (!accessControlService.canManageTransactionHouseholds(user, transaction)) {
             return ResponseEntity(HttpStatus.FORBIDDEN)
         }
 
@@ -94,9 +93,8 @@ class TransactionController(
 
         val patchedTransaction = transactionMapper.merge(patchedTransactionDTO, transaction)
 
-        // @TODO: add category ownership checks
         // @TODO: embed ACL checks into validation
-        if (accessControlService.canManageTransactionHouseholds(user, patchedTransaction)) {
+        if (!accessControlService.canManageTransactionHouseholds(user, patchedTransaction)) {
             return ResponseEntity(HttpStatus.FORBIDDEN)
         }
 
@@ -107,7 +105,7 @@ class TransactionController(
 
     @DeleteMapping(path = ["{id}"])
     fun delete(@PathVariable("id") transaction: Transaction, @AuthenticationPrincipal user: User): ResponseEntity<Any> {
-        if (accessControlService.canManageTransactionHouseholds(user, transaction)) {
+        if (!accessControlService.canManageTransactionHouseholds(user, transaction)) {
             return ResponseEntity(HttpStatus.FORBIDDEN)
         }
 
